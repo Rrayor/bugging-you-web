@@ -188,9 +188,10 @@ function makeActionLabel(action, noteText) {
 /** Updates the live character-count hint below the textarea. */
 function updateCharCount() {
   const remaining = MAX_NOTE_LENGTH - input.value.length;
-  charCount.textContent = `${remaining} character${remaining === 1 ? '' : 's'} remaining`;
-  // Pulse red when the character limit is reached so the user knows immediately.
-  charCount.classList.toggle('char-count--limit', remaining === 0);
+  const displayedRemaining = Math.max(remaining, 0);
+  charCount.textContent = `${displayedRemaining} character${displayedRemaining === 1 ? '' : 's'} remaining`;
+  // Turn red when the character limit is reached.
+  charCount.classList.toggle('char-count--limit', remaining <= 0);
   // Amber warning state kicks in earlier to give the user advance notice.
   charCount.classList.toggle('char-count--warn', remaining > 0 && remaining <= 20);
 }
