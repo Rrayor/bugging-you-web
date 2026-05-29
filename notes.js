@@ -56,7 +56,8 @@ function makeNoteStore(storage) {
   /** @returns {Note[]} */
   function load() {
     try {
-      return JSON.parse(storage.getItem(STORAGE_KEY) ?? '[]');
+      const parsed = JSON.parse(storage.getItem(STORAGE_KEY) ?? '[]');
+      return Array.isArray(parsed) ? parsed : [];
     } catch {
       // Corrupt JSON is unrecoverable.  Starting fresh is safer than crashing
       // the whole app because of a stale or manually edited storage entry.

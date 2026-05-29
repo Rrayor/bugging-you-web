@@ -92,6 +92,13 @@ describe('makeNoteStore – getAll()', () => {
     const store = makeNoteStore(storage);
     assert.equal(store.getAll().length, 0);
   });
+
+  it('returns an empty array when storage contains non-array JSON', () => {
+    const storage = makeFakeStorage();
+    storage.setItem(STORAGE_KEY, 'null');
+    const store = makeNoteStore(storage);
+    assert.equal(store.getAll().length, 0);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -119,6 +126,15 @@ describe('makeNoteStore – add()', () => {
     store.add('b');
     store.add('c');
     assert.equal(store.getAll().length, 3);
+  });
+
+  it('recovers when storage contains non-array JSON', () => {
+    const storage = makeFakeStorage();
+    storage.setItem(STORAGE_KEY, '{}');
+    const store = makeNoteStore(storage);
+    const note = store.add('safe');
+    assert.equal(store.getAll().length, 1);
+    assert.equal(store.getAll()[0].id, note.id);
   });
 });
 
