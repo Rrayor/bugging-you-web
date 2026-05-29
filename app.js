@@ -189,10 +189,29 @@ function makeActionLabel(action, noteText) {
 function updateCharCount() {
   const remaining = MAX_NOTE_LENGTH - input.value.length;
   charCount.textContent = `${remaining} character${remaining === 1 ? '' : 's'} remaining`;
-  // Pulse red when the character limit is reached so the user knows immediately.
-  charCount.classList.toggle('char-count--limit', remaining === 0);
   // Amber warning state kicks in earlier to give the user advance notice.
   charCount.classList.toggle('char-count--warn', remaining > 0 && remaining <= 20);
+}
+
+/** Returns true when the pressed key would insert a printable character. */
+function isPrintableKeyPress(event) {
+  return event.key.length === 1 && !event.ctrlKey && !event.metaKey && !event.altKey;
+}
+
+/** Returns true when typing another character would exceed the limit. */
+function isBlockedByCharacterLimit() {
+  const selectionStart = input.selectionStart ?? 0;
+  const selectionEnd = input.selectionEnd ?? 0;
+  const replacingSelection = selectionStart !== selectionEnd;
+  return input.value.length >= MAX_NOTE_LENGTH && !replacingSelection;
+}
+
+/** Restarts the limit animation so each blocked key press creates a fresh flash. */
+function flashCharacterLimit() {
+  charCount.classList.remove('char-count--limit');
+  // Force a reflow so re-adding the class always restarts the animation.
+  void charCount.offsetWidth;
+  charCount.classList.add('char-count--limit');
 }
 
 // ---------------------------------------------------------------------------
@@ -290,12 +309,20 @@ function registerServiceWorker() {
 form.addEventListener('submit', handleSubmit);
 cancelBtn.addEventListener('click', exitEditMode);
 input.addEventListener('input', updateCharCount);
+charCount.addEventListener('animationend', () => {
+  charCount.classList.remove('char-count--limit');
+});
 
 // Ctrl + Enter (or Cmd + Enter on Mac) submits the form without needing to
 // reach the Save button – a common power-user shortcut for text inputs.
 input.addEventListener('keydown', (e) => {
   if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) {
     form.requestSubmit();
+    return;
+  }
+
+  if (isPrintableKeyPress(e) && isBlockedByCharacterLimit()) {
+    flashCharacterLimit();
   }
 });
 
