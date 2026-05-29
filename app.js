@@ -96,14 +96,32 @@ function buildNoteItem(note) {
   actions.className = 'note-actions';
 
   // "Bug me" sends an OS notification with this note's text.
-  const bugBtn = makeButton('bug-btn', '🔔', 'Bug me', () => bugMe(note.text));
+  const bugBtn = makeButton(
+    'bug-btn',
+    '🔔',
+    'Bug me',
+    () => bugMe(note.text),
+    `Bug me: ${note.text}`,
+  );
 
   // "Edit" loads the note into the form for editing.
-  const editBtn = makeButton('edit-btn', '✏️', 'Edit', () => startEdit(note));
+  const editBtn = makeButton(
+    'edit-btn',
+    '✏️',
+    'Edit',
+    () => startEdit(note),
+    `Edit note: ${note.text}`,
+  );
 
   // "Remove" deletes the note immediately with no undo – intentional,
   // consistent with the lightweight "quick reminders" product feel.
-  const removeBtn = makeButton('remove-btn', '🗑️', 'Remove', () => removeNote(note.id));
+  const removeBtn = makeButton(
+    'remove-btn',
+    '🗑️',
+    'Remove',
+    () => removeNote(note.id),
+    `Remove note: ${note.text}`,
+  );
 
   // While this note is being edited, disable its own Edit button to avoid
   // confusing double-activation without shifting the button row layout.
@@ -127,12 +145,14 @@ function buildNoteItem(note) {
  * @param {string} emoji
  * @param {string} label
  * @param {() => void} onClick
+ * @param {string} [accessibleName]
  * @returns {HTMLButtonElement}
  */
-function makeButton(className, emoji, label, onClick) {
+function makeButton(className, emoji, label, onClick, accessibleName = label) {
   const btn = document.createElement('button');
   btn.type = 'button';
   btn.className = `action-btn ${className}`;
+  btn.setAttribute('aria-label', accessibleName);
 
   const icon = document.createElement('span');
   icon.className = 'btn-icon';
