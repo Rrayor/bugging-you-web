@@ -202,17 +202,9 @@ body {
   font-weight: 600;
 }
 
-/* Pulse red when the character limit is reached so the user knows immediately.
-   "Discrete" means slow and subtle – this draws attention without being distracting. */
-@keyframes pulse-limit {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.45; }
-}
-
 .char-count--limit {
   color: var(--color-danger);
   font-weight: 700;
-  animation: pulse-limit 1.2s ease-in-out infinite;
 }
 
 .form-actions {
