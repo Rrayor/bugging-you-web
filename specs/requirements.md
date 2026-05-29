@@ -16,7 +16,8 @@ Derived from `README.md`. Describes expected behaviour in testable terms.
 
 - A note with an empty or whitespace-only text value **must not** be saved.
 - Text is trimmed before saving.
-- Text longer than 255 characters is silently truncated on save.
+- The input enforces a hard 255-character limit; typing stops at the limit.
+- When the limit is reached, the character counter pulses red so the user knows immediately.
 - Notes are always returned **newest-first** (descending `createdAt`).
 
 ---

@@ -12,6 +12,8 @@
 import { makeNoteStore, MAX_NOTE_LENGTH } from './notes.js';
 import { bugMe } from './notifications.js';
 
+/** @typedef {import('./notes.js').Note} Note */
+
 // ---------------------------------------------------------------------------
 // Store
 // ---------------------------------------------------------------------------
@@ -71,7 +73,7 @@ function renderNotes() {
  * Builds a single `<li>` for a note.
  * All user-supplied text is written via `textContent` to avoid XSS.
  *
- * @param {import('./notes.js').Note} note
+ * @param {Note} note
  * @returns {HTMLLIElement}
  */
 function buildNoteItem(note) {
@@ -103,10 +105,10 @@ function buildNoteItem(note) {
   // consistent with the lightweight "quick reminders" product feel.
   const removeBtn = makeButton('remove-btn', '🗑️', 'Remove', () => removeNote(note.id));
 
-  // While this note is being edited, hide its own Edit button to avoid
-  // confusing double-activation.
+  // While this note is being edited, disable its own Edit button to avoid
+  // confusing double-activation without shifting the button row layout.
   if (state.editingId === note.id) {
-    editBtn.hidden = true;
+    editBtn.disabled = true;
   }
 
   actions.append(bugBtn, editBtn, removeBtn);
@@ -154,8 +156,10 @@ function makeButton(className, emoji, label, onClick) {
 function updateCharCount() {
   const remaining = MAX_NOTE_LENGTH - input.value.length;
   charCount.textContent = `${remaining} character${remaining === 1 ? '' : 's'} remaining`;
-  // Warn the user visually when they're close to the limit.
-  charCount.classList.toggle('char-count--warn', remaining <= 20);
+  // Pulse red when the character limit is reached so the user knows immediately.
+  charCount.classList.toggle('char-count--limit', remaining === 0);
+  // Amber warning state kicks in earlier to give the user advance notice.
+  charCount.classList.toggle('char-count--warn', remaining > 0 && remaining <= 20);
 }
 
 // ---------------------------------------------------------------------------
@@ -177,7 +181,7 @@ function exitEditMode() {
 /**
  * Switches the form into "Edit existing note" mode.
  *
- * @param {import('./notes.js').Note} note
+ * @param {Note} note
  */
 function startEdit(note) {
   state.editingId = note.id;
@@ -240,10 +244,9 @@ function registerServiceWorker() {
   // Deferred until after load so the SW registration doesn't compete with
   // initial page resources on the critical path.
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js').catch(() => {
-      // Registration failure is non-fatal; the app still works, just without
-      // offline support.
-    });
+    // Registration failure is non-fatal; the app still works, just without
+    // offline support.
+    void navigator.serviceWorker.register('/sw.js');
   });
 }
 

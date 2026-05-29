@@ -2,7 +2,7 @@
 
 ## Guiding principles
 
-The README explicitly asks for **no frameworks, no build tools, no backend**. Every decision below flows from that constraint plus the KISS and YAGNI principles stated in the task.
+The codebase intentionally uses no frameworks, build tools, or external dependencies. The architecture follows the KISS and YAGNI principles: every abstraction must earn its place by reducing real complexity, not theoretical future complexity.
 
 ---
 

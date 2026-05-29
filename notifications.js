@@ -35,7 +35,6 @@ async function bugMe(text) {
   // The Notification constructor fires the notification immediately.
   // We intentionally don't keep a reference to it; dismissal is entirely
   // the OS's responsibility (see README – "Notes and Notification Behavior").
-  // eslint-disable-next-line no-new
   new Notification('🐛 Bugging you!', {
     body: text,
     icon: '/icons/icon.svg',

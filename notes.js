@@ -47,11 +47,8 @@ function createNote(text) {
 
 /**
  * Returns a note store backed by the supplied `storage` object.
- *
- * Accepting `storage` as a parameter rather than closing over
- * `window.localStorage` directly is the only deliberate design pattern used
- * in this codebase.  It is justified solely for testability; without it, unit
- * tests would have to mock a browser global.  See docs/architecture.md.
+ * Injecting `storage` makes the store testable with a plain in-memory
+ * object instead of the real browser API.  See docs/architecture.md.
  *
  * @param {Pick<Storage, 'getItem' | 'setItem'>} storage
  */
