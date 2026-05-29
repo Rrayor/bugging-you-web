@@ -101,7 +101,7 @@ function buildNoteItem(note) {
     '🔔',
     'Bug me',
     () => bugMe(note.text),
-    `Bug me: ${note.text}`,
+    makeActionLabel('Bug me', note.text),
   );
 
   // "Edit" loads the note into the form for editing.
@@ -110,7 +110,7 @@ function buildNoteItem(note) {
     '✏️',
     'Edit',
     () => startEdit(note),
-    `Edit note: ${note.text}`,
+    makeActionLabel('Edit note', note.text),
   );
 
   // "Remove" deletes the note immediately with no undo – intentional,
@@ -120,7 +120,7 @@ function buildNoteItem(note) {
     '🗑️',
     'Remove',
     () => removeNote(note.id),
-    `Remove note: ${note.text}`,
+    makeActionLabel('Remove note', note.text),
   );
 
   // While this note is being edited, disable its own Edit button to avoid
@@ -166,6 +166,19 @@ function makeButton(className, emoji, label, onClick, accessibleName = label) {
   btn.append(icon, text);
   btn.addEventListener('click', onClick);
   return btn;
+}
+
+/**
+ * Builds a concise ARIA label that includes the note text context.
+ *
+ * @param {string} action
+ * @param {string} noteText
+ * @returns {string}
+ */
+function makeActionLabel(action, noteText) {
+  const normalized = noteText.replace(/\s+/g, ' ').trim();
+  const preview = normalized.length > 50 ? `${normalized.slice(0, 50)}…` : normalized;
+  return `${action}: ${preview}`;
 }
 
 // ---------------------------------------------------------------------------
