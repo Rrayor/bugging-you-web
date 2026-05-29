@@ -17,7 +17,8 @@
   --color-warn:          #f59e0b;
   --color-danger:        #ef4444;
   --color-danger-hover:  #dc2626;
-  --color-swipe-danger:  #a4525e;
+  --color-swipe-delete-bg:#a4525e;
+  --swipe-danger-opacity-max: 0.6;
   --color-editing-glow:  rgba(124, 58, 237, 0.25);
 
   /* Typography */
@@ -44,6 +45,7 @@
 
   /* Transitions */
   --transition-fast: 150ms ease;
+  --transition-swipe: 220ms ease;
 }
 
 /* ============================================================
@@ -285,16 +287,16 @@ body {
   gap: var(--space-3);
   transform: translateX(var(--swipe-offset));
   touch-action: pan-y;
-  transition: transform 220ms ease, border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition: transform var(--transition-swipe), border-color var(--transition-fast), box-shadow var(--transition-fast);
 }
 
 .note-item::before {
   content: '';
   position: absolute;
   inset: 0;
-  background-color: var(--color-swipe-danger);
-  opacity: calc(var(--swipe-progress) * 0.6);
-  transition: opacity 220ms ease;
+  background-color: var(--color-swipe-delete-bg);
+  opacity: calc(var(--swipe-progress) * var(--swipe-danger-opacity-max));
+  transition: opacity var(--transition-swipe);
   pointer-events: none;
 }
 

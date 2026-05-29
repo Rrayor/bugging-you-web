@@ -30,6 +30,7 @@ const store = makeNoteStore(window.localStorage);
  * the form is in "Edit" mode.
  */
 const state = { editingId: /** @type {string | null} */ (null) };
+const SWIPE_ACTIVATION_DELTA_PX = 8;
 const SWIPE_DELETE_THRESHOLD_PX = 96;
 const SWIPE_MAX_OFFSET_PX = 140;
 
@@ -193,9 +194,11 @@ function makeActionLabel(action, noteText) {
 function attachSwipeToDelete(item, noteId) {
   let startX = 0;
   let startY = 0;
-  let currentOffset = 0;
-  let tracking = false;
-  let swiping = false;
+  const swipeState = {
+    currentOffset: 0,
+    tracking: false,
+    swiping: false,
+  };
 
   const resetVisuals = () => {
     item.style.setProperty('--swipe-offset', '0px');
@@ -210,9 +213,9 @@ function attachSwipeToDelete(item, noteId) {
   };
 
   const clearSwipeState = () => {
-    tracking = false;
-    swiping = false;
-    currentOffset = 0;
+    swipeState.tracking = false;
+    swipeState.swiping = false;
+    swipeState.currentOffset = 0;
     item.classList.remove('note-item--swiping');
     resetVisuals();
   };
@@ -223,41 +226,48 @@ function attachSwipeToDelete(item, noteId) {
     const touch = event.touches[0];
     startX = touch.clientX;
     startY = touch.clientY;
-    currentOffset = 0;
-    tracking = true;
-    swiping = false;
+    swipeState.currentOffset = 0;
+    swipeState.tracking = true;
+    swipeState.swiping = false;
   }, { passive: true });
 
   item.addEventListener('touchmove', (event) => {
-    if (!tracking || event.touches.length !== 1) return;
+    if (!swipeState.tracking || event.touches.length !== 1) return;
 
     const touch = event.touches[0];
     const deltaX = touch.clientX - startX;
     const deltaY = touch.clientY - startY;
 
-    if (!swiping) {
-      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
-        clearSwipeState();
+    if (!swipeState.swiping) {
+      const horizontalDistance = Math.abs(deltaX);
+      const verticalDistance = Math.abs(deltaY);
+
+      if (verticalDistance > horizontalDistance) {
+        if (verticalDistance > SWIPE_ACTIVATION_DELTA_PX) {
+          clearSwipeState();
+        }
         return;
       }
 
-      if (Math.abs(deltaX) < 8 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+      if (horizontalDistance < SWIPE_ACTIVATION_DELTA_PX) {
         return;
       }
 
-      swiping = true;
+      swipeState.swiping = true;
       item.classList.add('note-item--swiping');
     }
 
+    // Once horizontal swipe intent is confirmed, prevent default touch scrolling
+    // so the card movement stays tightly coupled to the finger.
     event.preventDefault();
-    currentOffset = deltaX;
-    updateVisuals(currentOffset);
+    swipeState.currentOffset = deltaX;
+    updateVisuals(swipeState.currentOffset);
   }, { passive: false });
 
   item.addEventListener('touchend', () => {
-    if (!tracking) return;
+    if (!swipeState.tracking) return;
 
-    const shouldRemove = swiping && Math.abs(currentOffset) >= SWIPE_DELETE_THRESHOLD_PX;
+    const shouldRemove = swipeState.swiping && Math.abs(swipeState.currentOffset) >= SWIPE_DELETE_THRESHOLD_PX;
     if (shouldRemove) {
       removeNote(noteId);
       return;
