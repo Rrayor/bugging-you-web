@@ -32,9 +32,22 @@ async function bugMe(text) {
   // in the prompt above), so we check again before trying to notify.
   if (Notification.permission !== 'granted') return;
 
-  // The Notification constructor fires the notification immediately.
-  // We intentionally don't keep a reference to it; dismissal is entirely
-  // the OS's responsibility (see README – "Notes and Notification Behavior").
+  // Prefer service-worker notifications for better cross-platform reliability
+  // (notably Android-installed PWAs), then fall back to page notifications.
+  if ('serviceWorker' in navigator) {
+    try {
+      const registration = await navigator.serviceWorker.ready;
+      await registration.showNotification('🐛 Bugging you!', {
+        body: text,
+        icon: '/icons/icon.svg',
+      });
+      return;
+    } catch {
+      // Fall through to constructor-based notification.
+    }
+  }
+
+  // Desktop browsers generally support page-context notifications well.
   new Notification('🐛 Bugging you!', {
     body: text,
     icon: '/icons/icon.svg',

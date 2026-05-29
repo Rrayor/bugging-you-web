@@ -12,7 +12,7 @@
  * ensuring users pick up updated assets after a deployment.
  */
 
-const CACHE_NAME = 'bugging-you-v1';
+const CACHE_NAME = 'bugging-you-v1.0.1';
 
 /** Static assets that make up the entire app shell. */
 const ASSETS = [
