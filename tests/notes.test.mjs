@@ -40,11 +40,6 @@ describe('createNote()', () => {
     assert.equal(createNote('  hello world  ').text, 'hello world');
   });
 
-  it('truncates text at MAX_NOTE_LENGTH', () => {
-    const note = createNote('x'.repeat(MAX_NOTE_LENGTH + 50));
-    assert.equal(note.text.length, MAX_NOTE_LENGTH);
-  });
-
   it('leaves text shorter than MAX_NOTE_LENGTH unchanged', () => {
     assert.equal(createNote('short').text, 'short');
   });
@@ -152,14 +147,6 @@ describe('makeNoteStore – update()', () => {
   it('returns null for an unknown id', () => {
     const store = makeNoteStore(makeFakeStorage());
     assert.equal(store.update('no-such-id', 'anything'), null);
-  });
-
-  it('trims and truncates new text', () => {
-    const store = makeNoteStore(makeFakeStorage());
-    const note = store.add('original');
-    store.update(note.id, '  ' + 'x'.repeat(300) + '  ');
-    const found = store.getAll().find((n) => n.id === note.id);
-    assert.equal(found.text.length, MAX_NOTE_LENGTH);
   });
 });
 

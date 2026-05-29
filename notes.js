@@ -32,7 +32,7 @@ function generateId() {
 }
 
 /**
- * Constructs a new note object.  Text is trimmed and capped at MAX_NOTE_LENGTH.
+ * Constructs a new note object.  Text is trimmed.
  *
  * @param {string} text
  * @returns {Note}
@@ -40,7 +40,7 @@ function generateId() {
 function createNote(text) {
   return {
     id: generateId(),
-    text: text.trim().slice(0, MAX_NOTE_LENGTH),
+    text: text.trim(),
     createdAt: Date.now(),
   };
 }
@@ -105,7 +105,7 @@ function makeNoteStore(storage) {
       const notes = load();
       const note = notes.find((n) => n.id === id);
       if (!note) return null;
-      note.text = newText.trim().slice(0, MAX_NOTE_LENGTH);
+      note.text = newText.trim();
       save(notes);
       return note;
     },

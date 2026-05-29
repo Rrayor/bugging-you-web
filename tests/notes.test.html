@@ -126,12 +126,6 @@
         assertEqual(note.text, 'hello world');
       });
 
-      test('truncates text at MAX_NOTE_LENGTH', () => {
-        const longText = 'x'.repeat(MAX_NOTE_LENGTH + 50);
-        const note = createNote(longText);
-        assertEqual(note.text.length, MAX_NOTE_LENGTH);
-      });
-
       test('text shorter than MAX_NOTE_LENGTH is not changed', () => {
         const note = createNote('short');
         assertEqual(note.text, 'short');
@@ -241,14 +235,6 @@
         const store = makeNoteStore(makeFakeStorage());
         const result = store.update('no-such-id', 'anything');
         assertEqual(result, null);
-      });
-
-      test('update() trims and truncates new text', () => {
-        const store = makeNoteStore(makeFakeStorage());
-        const note = store.add('original');
-        store.update(note.id, '  ' + 'x'.repeat(300) + '  ');
-        const found = store.getAll().find(n => n.id === note.id);
-        assertEqual(found.text.length, MAX_NOTE_LENGTH);
       });
 
       // -----------------------------------------------------------------------
