@@ -217,13 +217,16 @@ function handleSubmit(e) {
  * @param {string} id
  */
 function removeNote(id) {
-  // If the note being removed is currently in edit mode, cancel that edit
-  // first so the form doesn't show stale content.
-  if (state.editingId === id) {
-    exitEditMode();
-    return; // exitEditMode already calls renderNotes after removing edit state.
-  }
+  // Delete from storage first so the re-render triggered by exitEditMode (or
+  // the explicit renderNotes below) reflects the removed note.
   store.remove(id);
+
+  if (state.editingId === id) {
+    // The note being removed was open for editing – clear the form too.
+    exitEditMode();
+    return; // exitEditMode calls renderNotes; no need to call it again.
+  }
+
   renderNotes();
 }
 

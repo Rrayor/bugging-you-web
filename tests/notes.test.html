@@ -164,15 +164,19 @@
 
       test('returns notes in newest-first order', () => {
         const storage = makeFakeStorage();
+        // Write notes directly with distinct, known timestamps so the sort
+        // result is deterministic regardless of clock resolution on the machine.
+        const raw = [
+          { id: 'a', text: 'oldest', createdAt: 1000 },
+          { id: 'b', text: 'middle', createdAt: 2000 },
+          { id: 'c', text: 'newest', createdAt: 3000 },
+        ];
+        storage.setItem(STORAGE_KEY, JSON.stringify(raw));
         const store = makeNoteStore(storage);
-        store.add('first');
-        // Brief delay ensures different timestamps even in fast environments.
-        store.add('second');
-        store.add('third');
         const notes = store.getAll();
-        assertEqual(notes[0].text, 'third');
-        assertEqual(notes[1].text, 'second');
-        assertEqual(notes[2].text, 'first');
+        assertEqual(notes[0].text, 'newest');
+        assertEqual(notes[1].text, 'middle');
+        assertEqual(notes[2].text, 'oldest');
       });
 
       test('returns an empty array when storage contains corrupt JSON', () => {
