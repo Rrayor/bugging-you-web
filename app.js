@@ -30,6 +30,8 @@ const store = makeNoteStore(window.localStorage);
  * the form is in "Edit" mode.
  */
 const state = { editingId: /** @type {string | null} */ (null) };
+const SWIPE_DELETE_THRESHOLD_PX = 96;
+const SWIPE_MAX_OFFSET_PX = 140;
 
 // ---------------------------------------------------------------------------
 // DOM references  (resolved once, reused everywhere)
@@ -131,6 +133,7 @@ function buildNoteItem(note) {
 
   actions.append(bugBtn, editBtn, removeBtn);
   li.append(textEl, actions);
+  attachSwipeToDelete(li, note.id);
 
   return li;
 }
@@ -179,6 +182,91 @@ function makeActionLabel(action, noteText) {
   const normalized = noteText.replace(/\s+/g, ' ').trim();
   const preview = normalized.length > 50 ? `${normalized.slice(0, 50)}…` : normalized;
   return `${action}: ${preview}`;
+}
+
+/**
+ * Enables horizontal swipe-to-delete for touch devices.
+ *
+ * @param {HTMLLIElement} item
+ * @param {string} noteId
+ */
+function attachSwipeToDelete(item, noteId) {
+  let startX = 0;
+  let startY = 0;
+  let currentOffset = 0;
+  let tracking = false;
+  let swiping = false;
+
+  const resetVisuals = () => {
+    item.style.setProperty('--swipe-offset', '0px');
+    item.style.setProperty('--swipe-progress', '0');
+  };
+
+  const updateVisuals = (offset) => {
+    const clampedOffset = Math.max(-SWIPE_MAX_OFFSET_PX, Math.min(SWIPE_MAX_OFFSET_PX, offset));
+    const progress = Math.min(Math.abs(clampedOffset) / SWIPE_DELETE_THRESHOLD_PX, 1);
+    item.style.setProperty('--swipe-offset', `${clampedOffset}px`);
+    item.style.setProperty('--swipe-progress', progress.toFixed(3));
+  };
+
+  const clearSwipeState = () => {
+    tracking = false;
+    swiping = false;
+    currentOffset = 0;
+    item.classList.remove('note-item--swiping');
+    resetVisuals();
+  };
+
+  item.addEventListener('touchstart', (event) => {
+    if (event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    startX = touch.clientX;
+    startY = touch.clientY;
+    currentOffset = 0;
+    tracking = true;
+    swiping = false;
+  }, { passive: true });
+
+  item.addEventListener('touchmove', (event) => {
+    if (!tracking || event.touches.length !== 1) return;
+
+    const touch = event.touches[0];
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+
+    if (!swiping) {
+      if (Math.abs(deltaY) > Math.abs(deltaX) && Math.abs(deltaY) > 8) {
+        clearSwipeState();
+        return;
+      }
+
+      if (Math.abs(deltaX) < 8 || Math.abs(deltaX) <= Math.abs(deltaY)) {
+        return;
+      }
+
+      swiping = true;
+      item.classList.add('note-item--swiping');
+    }
+
+    event.preventDefault();
+    currentOffset = deltaX;
+    updateVisuals(currentOffset);
+  }, { passive: false });
+
+  item.addEventListener('touchend', () => {
+    if (!tracking) return;
+
+    const shouldRemove = swiping && Math.abs(currentOffset) >= SWIPE_DELETE_THRESHOLD_PX;
+    if (shouldRemove) {
+      removeNote(noteId);
+      return;
+    }
+
+    clearSwipeState();
+  });
+
+  item.addEventListener('touchcancel', clearSwipeState);
 }
 
 // ---------------------------------------------------------------------------
