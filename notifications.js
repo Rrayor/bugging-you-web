@@ -36,12 +36,14 @@ async function bugMe(text) {
   // (notably Android-installed PWAs), then fall back to page notifications.
   if ('serviceWorker' in navigator) {
     try {
-      const registration = await navigator.serviceWorker.ready;
-      await registration.showNotification('🐛 Bugging you!', {
-        body: text,
-        icon: '/icons/icon.svg',
-      });
-      return;
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration) {
+        await registration.showNotification('🐛 Bugging you!', {
+          body: text,
+          icon: '/icons/icon.svg',
+        });
+        return;
+      }
     } catch {
       // Fall through to constructor-based notification.
     }
