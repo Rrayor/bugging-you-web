@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<!--
+  Browser-based unit tests for the notes.js module.
+  Open this file in a browser (or serve it from a local server) to run the
+  tests.  No dependencies needed – the test runner is implemented inline.
+
+  To run: npx serve . then navigate to /tests/notes.test.html
+          OR: python3 -m http.server 8080 and open localhost:8080/tests/notes.test.html
+-->
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Notes Module Tests</title>
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        background: #0d0d1a;
+        color: #e2e8f0;
+        padding: 2rem;
+        max-width: 48rem;
+        margin: 0 auto;
+      }
+      h1 { margin-bottom: 1rem; }
+      ul { list-style: none; padding: 0; }
+      li {
+        padding: 0.4rem 0.8rem;
+        margin-bottom: 0.4rem;
+        border-radius: 0.5rem;
+        font-size: 0.9rem;
+      }
+      .pass { background: #14532d; color: #bbf7d0; }
+      .fail { background: #7f1d1d; color: #fecaca; }
+      .suite { margin-top: 1.5rem; font-weight: 700; color: #94a3b8; }
+      #summary {
+        margin-top: 1.5rem;
+        padding: 1rem;
+        border-radius: 0.75rem;
+        font-weight: 700;
+        font-size: 1.1rem;
+      }
+      .summary-pass { background: #14532d; color: #bbf7d0; }
+      .summary-fail { background: #7f1d1d; color: #fecaca; }
+    </style>
+  </head>
+  <body>
+    <h1>🐛 Notes Module Tests</h1>
+    <ul id="results"></ul>
+    <div id="summary"></div>
+
+    <script type="module">
+      import { createNote, makeNoteStore, MAX_NOTE_LENGTH, STORAGE_KEY } from '../notes.js';
+
+      // -----------------------------------------------------------------------
+      // Minimal test runner
+      // -----------------------------------------------------------------------
+
+      const results = document.getElementById('results');
+      const summary = document.getElementById('summary');
+      let passed = 0;
+      let failed = 0;
+
+      /** Runs a named test function and logs pass/fail to the DOM. */
+      function test(name, fn) {
+        try {
+          fn();
+          passed++;
+          results.insertAdjacentHTML('beforeend', `<li class="pass">✓ ${name}</li>`);
+        } catch (err) {
+          failed++;
+          results.insertAdjacentHTML('beforeend',
+            `<li class="fail">✗ ${name}<br><small>${err.message}</small></li>`);
+        }
+      }
+
+      /** Groups tests under a visible heading. */
+      function suite(name) {
+        results.insertAdjacentHTML('beforeend', `<li class="suite">${name}</li>`);
+      }
+
+      function assert(condition, message = 'assertion failed') {
+        if (!condition) throw new Error(message);
+      }
+
+      function assertEqual(actual, expected) {
+        if (actual !== expected) {
+          throw new Error(`expected ${JSON.stringify(expected)}, got ${JSON.stringify(actual)}`);
+        }
+      }
+
+      function assertNotNull(value) {
+        if (value === null || value === undefined) {
+          throw new Error(`expected a value, got ${value}`);
+        }
+      }
+
+      // -----------------------------------------------------------------------
+      // Fake in-memory storage (mirrors the Storage interface we care about)
+      // -----------------------------------------------------------------------
+
+      /** Returns a fresh fake storage instance for each test to prevent bleed. */
+      function makeFakeStorage() {
+        const map = new Map();
+        return {
+          getItem:    (key) => map.get(key) ?? null,
+          setItem:    (key, value) => map.set(key, value),
+          removeItem: (key) => map.delete(key),
+        };
+      }
+
+      // -----------------------------------------------------------------------
+      // createNote()
+      // -----------------------------------------------------------------------
+
+      suite('createNote()');
+
+      test('returns an object with id, text, and createdAt', () => {
+        const note = createNote('buy milk');
+        assert(typeof note.id === 'string',    'id is a string');
+        assert(typeof note.text === 'string',  'text is a string');
+        assert(typeof note.createdAt === 'number', 'createdAt is a number');
+      });
+
+      test('trims leading and trailing whitespace', () => {
+        const note = createNote('  hello world  ');
+        assertEqual(note.text, 'hello world');
+      });
+
+      test('text shorter than MAX_NOTE_LENGTH is not changed', () => {
+        const note = createNote('short');
+        assertEqual(note.text, 'short');
+      });
+
+      test('generates unique ids for two notes created in sequence', () => {
+        const a = createNote('a');
+        const b = createNote('b');
+        assert(a.id !== b.id, 'ids must differ');
+      });
+
+      test('createdAt is a recent timestamp', () => {
+        const before = Date.now();
+        const note = createNote('ts test');
+        const after = Date.now();
+        assert(note.createdAt >= before, 'createdAt >= before');
+        assert(note.createdAt <= after,  'createdAt <= after');
+      });
+
+      // -----------------------------------------------------------------------
+      // makeNoteStore – getAll()
+      // -----------------------------------------------------------------------
+
+      suite('makeNoteStore – getAll()');
+
+      test('returns an empty array when storage is empty', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        assertEqual(store.getAll().length, 0);
+      });
+
+      test('returns notes in newest-first order', () => {
+        const storage = makeFakeStorage();
+        // Write notes directly with distinct, known timestamps so the sort
+        // result is deterministic regardless of clock resolution on the machine.
+        const raw = [
+          { id: 'a', text: 'oldest', createdAt: 1000 },
+          { id: 'b', text: 'middle', createdAt: 2000 },
+          { id: 'c', text: 'newest', createdAt: 3000 },
+        ];
+        storage.setItem(STORAGE_KEY, JSON.stringify(raw));
+        const store = makeNoteStore(storage);
+        const notes = store.getAll();
+        assertEqual(notes[0].text, 'newest');
+        assertEqual(notes[1].text, 'middle');
+        assertEqual(notes[2].text, 'oldest');
+      });
+
+      test('returns an empty array when storage contains corrupt JSON', () => {
+        const storage = makeFakeStorage();
+        storage.setItem(STORAGE_KEY, 'not-json{{{');
+        const store = makeNoteStore(storage);
+        assertEqual(store.getAll().length, 0);
+      });
+
+      // -----------------------------------------------------------------------
+      // makeNoteStore – add()
+      // -----------------------------------------------------------------------
+
+      suite('makeNoteStore – add()');
+
+      test('add() returns the newly created note', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const note = store.add('hello');
+        assertNotNull(note);
+        assertEqual(note.text, 'hello');
+      });
+
+      test('add() persists the note so getAll() finds it', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        store.add('persisted');
+        assertEqual(store.getAll().length, 1);
+        assertEqual(store.getAll()[0].text, 'persisted');
+      });
+
+      test('multiple add() calls accumulate notes', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        store.add('a');
+        store.add('b');
+        store.add('c');
+        assertEqual(store.getAll().length, 3);
+      });
+
+      // -----------------------------------------------------------------------
+      // makeNoteStore – update()
+      // -----------------------------------------------------------------------
+
+      suite('makeNoteStore – update()');
+
+      test('update() changes the text of an existing note', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const note = store.add('original');
+        store.update(note.id, 'updated');
+        const found = store.getAll().find(n => n.id === note.id);
+        assertNotNull(found);
+        assertEqual(found.text, 'updated');
+      });
+
+      test('update() returns the updated note', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const note = store.add('original');
+        const updated = store.update(note.id, 'new text');
+        assertNotNull(updated);
+        assertEqual(updated.text, 'new text');
+      });
+
+      test('update() returns null for an unknown id', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const result = store.update('no-such-id', 'anything');
+        assertEqual(result, null);
+      });
+
+      // -----------------------------------------------------------------------
+      // makeNoteStore – remove()
+      // -----------------------------------------------------------------------
+
+      suite('makeNoteStore – remove()');
+
+      test('remove() deletes the note with the given id', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const note = store.add('to remove');
+        store.remove(note.id);
+        assertEqual(store.getAll().length, 0);
+      });
+
+      test('remove() leaves other notes intact', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        const a = store.add('keep me');
+        const b = store.add('delete me');
+        store.remove(b.id);
+        const all = store.getAll();
+        assertEqual(all.length, 1);
+        assertEqual(all[0].id, a.id);
+      });
+
+      test('remove() is a no-op for an unknown id', () => {
+        const store = makeNoteStore(makeFakeStorage());
+        store.add('safe');
+        store.remove('no-such-id');
+        assertEqual(store.getAll().length, 1);
+      });
+
+      // -----------------------------------------------------------------------
+      // Summary
+      // -----------------------------------------------------------------------
+
+      const total = passed + failed;
+      summary.textContent = `${passed} / ${total} tests passed`;
+      summary.className = failed === 0 ? 'summary-pass' : 'summary-fail';
+    </script>
+  </body>
+</html>

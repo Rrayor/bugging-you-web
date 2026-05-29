@@ -1,5 +1,7 @@
 # Bugging you
 
+[![Tests](https://github.com/Rrayor/bugging-you-web/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/Rrayor/bugging-you-web/actions/workflows/test.yml)
+
 A simple note-taking PWA for quick reminders. It lets you save short notes locally on your device and instantly send any note to your OS notifications with a **Bug me** button.
 
 ## Overview

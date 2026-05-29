@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0d0d1a" />
+    <meta name="description" content="Quick reminders, straight to your OS notifications." />
+
+    <!-- PWA / installability -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- iOS PWA support: Safari reads these rather than the manifest -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Bugging You" />
+    <link rel="apple-touch-icon" href="/icons/icon.svg" />
+
+    <link rel="icon" href="/icons/icon.svg" type="image/svg+xml" />
+
+    <title>Bugging You</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <header class="app-header">
+      <img src="/icons/icon.svg" alt="" class="header-logo" aria-hidden="true" />
+      <div class="header-text">
+        <h1 class="app-title">Bugging You</h1>
+        <p class="app-tagline">Quick reminders, straight to your notifications</p>
+      </div>
+    </header>
+
+    <main class="app-main">
+
+      <!-- Note input form -->
+      <section class="form-section" aria-label="Add or edit a note">
+        <form id="note-form" novalidate>
+          <label for="note-input" class="form-label">
+            What do you need reminding about?
+          </label>
+
+          <div class="input-row">
+            <textarea
+              id="note-input"
+              name="note"
+              class="note-input"
+              placeholder="e.g. Buy oat milk"
+              maxlength="255"
+              rows="2"
+              aria-describedby="char-count"
+              autocomplete="off"
+              spellcheck="true"
+            ></textarea>
+          </div>
+
+          <div class="form-footer">
+            <span
+              id="char-count"
+              class="char-count"
+              aria-live="polite"
+              aria-atomic="true"
+            >255 characters remaining</span>
+
+            <div class="form-actions">
+              <button
+                id="cancel-btn"
+                type="button"
+                class="btn btn--ghost"
+                hidden
+              >Cancel</button>
+
+              <button
+                id="save-btn"
+                type="submit"
+                class="btn btn--primary"
+                aria-label="Save note"
+              >Save</button>
+            </div>
+          </div>
+        </form>
+      </section>
+
+      <!-- Notes list -->
+      <section class="notes-section" aria-label="Your notes">
+        <ul id="notes-list" class="notes-list"></ul>
+
+        <p id="empty-state" class="empty-state" hidden>
+          No notes yet – add one above to get started! 🐛
+        </p>
+      </section>
+
+    </main>
+
+    <!--
+      type="module" gives us:
+        • native import/export support (no bundler needed)
+        • automatic defer (script runs after HTML is parsed)
+        • strict mode by default
+        • no global scope pollution
+    -->
+    <script type="module" src="/app.js"></script>
+  </body>
+</html>
